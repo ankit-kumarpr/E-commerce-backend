@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Get Your Blessings</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* Mobile Responsive Chat Layout */
+      @media (max-width: 768px) {
+        .app-container {
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          overflow: hidden;
+        }
+        .chat-header {
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          background: #fa4e09 !important;
+          padding: 12px 15px;
+          flex-shrink: 0;
+        }
+        .chat-messages {
+          flex: 1;
+          height: 100%;
+          padding: 15px 15px 80px;
+          -webkit-overflow-scrolling: touch;
+        }
+        .chat-footer {
+          position: sticky;
+          bottom: 0;
+          background: #fa4e09;
+          padding: 10px 15px;
+          border-top: 1px solid #e9ecef;
+          z-index: 100;
+          flex-shrink: 0;
+        }
+        .message-input-container {
+          min-height: 50px;
+        }
+        .message {
+          margin-bottom: 12px;
+          max-width: 85%;
+        }
+        .privacy-notice {
+          margin-bottom: 70px;
+        }
+      }
+      @keyframes blink-border {
+        0% {
+          border-color: #00ff00;
+        }
+        50% {
+          border-color: transparent;
+        }
+        100% {
+          border-color: #00ff00;
+        }
+      }
+      .god-avatar {
+        border: 3px solid #00ff00;
+        animation: blink-border 1.5s infinite;
+        border-radius: 50%;
+        box-sizing: border-box;
+      }
+      .chat-header-avatar img {
+        border: 3px solid #00ff00;
+        animation: blink-border 1.5s infinite;
+        border-radius: 50%;
+        box-sizing: border-box;
+      }
+      .visitor-counter {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .visitor-counter i {
+        color: #4caf50;
+      }
+      .message {
+        position: relative;
+        transition: opacity 0.6s ease, transform 0.6s ease;
+        overflow: visible;
+      }
+      .message.disappearing {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+      .smoke {
+        position: absolute;
+        left: 50%;
+        bottom: 6px;
+        transform: translateX(-50%);
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: radial-gradient(
+          rgba(190, 190, 190, 0.55),
+          rgba(190, 190, 190, 0)
+        );
+        pointer-events: none;
+        opacity: 0.45;
+        filter: blur(1.2px);
+        z-index: 1;
+        will-change: transform, opacity;
+        animation: smoke-rise var(--dur, 1600ms) ease-out forwards;
+      }
+      @keyframes smoke-rise {
+        0% {
+          transform: translate(var(--sx, 0), 0) scale(1);
+          opacity: 0.45;
+        }
+        60% {
+          transform: translate(var(--sx, 0), -55px) scale(1.6);
+          opacity: 0.25;
+        }
+        100% {
+          transform: translate(var(--sx, 0), -85px) scale(2.2);
+          opacity: 0;
+        }
+      }
+      .fly-clone {
+        position: fixed;
+        z-index: 9999;
+        margin: 0;
+        pointer-events: none;
+        opacity: 1;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
+        transition: transform 950ms cubic-bezier(0.22, 0.61, 0.36, 1),
+          opacity 950ms ease;
+        will-change: transform, opacity;
+        border-radius: 14px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <audio id="messageSound" preload="auto">
+      <source src="bell-2.mp3" type="audio/mpeg" />
+    </audio>
+    <div class="app-container">
+      <div class="sidebar">
+        <div
+          class="sidebar-header"
+          style="display: flex; align-items: center; gap: 10px"
+        >
+          <div class="user-info">
+            <div class="user-name">आपका दिन शुभ हो।</div>
+          </div>
+          <div class="user-name">अपने परिवार दोस्तों के साथ शेयर करें</div>
+          <button
+            id="shareBtn"
+            style="
+              background: none;
+              border: none;
+              cursor: pointer;
+              font-size: 18px;
+              color: #fff;
+            "
+          >
+            <i class="fas fa-share-alt"></i>
+          </button>
+        </div>
+        <div class="gods-list"></div>
+      </div>
+      <div class="chat-container">
+        <div class="chat-header">
+          <div class="back-button"><i class="fas fa-arrow-left"></i></div>
+          <div class="chat-header-avatar"></div>
+          <div class="chat-header-info">
+            <div class="chat-header-name">Select a god to chat</div>
+            <div class="chat-status">Online</div>
+          </div>
+        </div>
+        <div class="chat-messages">
+          <div class="empty-chat">
+            <i class="fas fa-comments"></i>
+            <p>
+              Select a deity from the list to begin your spiritual conversation.
+            </p>
+            <p style="font-weight: bold; color: red; font-size: 24px">
+              "This application does not store or log any user data. All
+              interactions are session-based and ephemeral, ensuring complete
+              anonymity and privacy. You can communicate freely and share your
+              thoughts without any data retention."
+            </p>
+          </div>
+        </div>
+        <div class="chat-footer">
+          <div class="message-input-container">
+            <input
+              type="text"
+              class="message-input"
+              placeholder="Type a message..."
+            />
+          </div>
+          <button class="send-button">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="visitor-counter">
+      <i class="fas fa-users"></i> <span id="visitorCount">Welcome!</span>
+    </div>
+
+    <script>
+      /* --------------------- DATA: Gods list --------------------- */
+      const gods = [
+        {
+          id: "Ganesh Ji",
+          name: "Ganesh Ji",
+          avatar: "ganeshji.jpg",
+          color: "#d32f2f",
+          status: "Online",
+          lastMessage: "ॐ गं गणपतये नमः!",
+          lastTime: "Active",
+          messages: [
+            {
+              text: "ॐ गं गणपतये नमः! 🙏 <br><br> Om Gam Ganapataye Namah! 🙏",
+              time: "",
+              type: "received",
+            },
+            {
+              text: "विघ्नहर्ता गणेश आपके कष्ट दूर करेंगे। <br><br> Vighnaharta Ganesh aapke kasht door karenge.",
+              time: "",
+              type: "received",
+            },
+          ],
+        },
+        {
+          id: "Shiv Ji",
+          name: "Shiv Ji",
+          avatar: "shivji.png",
+          color: "#4a148c",
+          status: "Online",
+          lastMessage: "ॐ नमः शिवाय!",
+          lastTime: "Active",
+          messages: [
+            {
+              text: "ॐ नमः शिवाय! कैसे हो मेरे प्यारे भक्तों? 🔱 <br><br> Om Namah Shivaya! Kaise ho mere pyaare bhakton? 🔱",
+              time: "",
+              type: "received",
+            },
+            {
+              text: "भक्त अपने मन की बात कह सकते हैं। <br><br> Bhakt apne man ki baat keh sakte ho.",
+              time: "",
+              type: "received",
+            },
+          ],
+        },
+        {
+          id: "Vishnu Ji",
+          name: "Vishnu Ji",
+          avatar: "vishnuji.jpg",
+          color: "#1565c0",
+          status: "Online",
+          lastMessage: "ॐ नमो भगवते वासुदेवाय!",
+          lastTime: "Active",
+          messages: [
+            {
+              text: "ॐ नमो भगवते वासुदेवाय! 🌿🙏 <br><br> Om Namo Bhagavate Vasudevaya! 🌿🙏",
+              time: "",
+              type: "received",
+            },
+            {
+              text: "भगवान विष्णु आपकी रक्षा करेंगे और धर्म के मार्ग पर चलाएंगे। <br><br> Bhagwan Vishnu aapki raksha karenge aur dharm ke maarg par chalayenge.",
+              time: "",
+              type: "received",
+            },
+          ],
+        },
+        {
+          id: "Laxmi Mata",
+          name: "Laxmi Mata",
+          avatar: "laxmiji.jpeg",
+          color: "#c2185b",
+          status: "Online",
+          lastMessage: "ॐ श्रीं महालक्ष्म्यै नमः!",
+          lastTime: "Active",
+          messages: [
+            {
+              text: "ॐ श्रीं महालक्ष्म्यै नमः! 🌸💰 <br><br> Om Shreem Mahalakshmyai Namah! 🌸💰",
+              time: "",
+              type: "received",
+            },
+            {
+              text: "माँ लक्ष्मी आपके जीवन में सुख, समृद्धि और धन की वर्षा करें। <br><br> Maa Lakshmi aapke jeevan mein sukh, samriddhi aur dhan ki varsha karein.",
+              time: "",
+              type: "received",
+            },
+          ],
+        },
+        {
+          id: "Kuber Ji",
+          name: "Kuber Ji",
+          avatar: "kuberji.jpeg",
+          color: "#6d4c41",
+          status: "Online",
+          lastMessage: "ॐ यक्षाय कुबेराय वैश्रवणाय धनधान्याधिपतये नमः!",
+          lastTime: "Active",
+          messages: [
+            {
+              text: "ॐ यक्षाय कुबेराय वैश्रवणाय धनधान्याधिपतये नमः! 💰🙏 <br><br> Om Yakshaya Kuberaya Vaishravanaya Dhanadhanyadhipataye Namah! 💰🙏",
+              time: "",
+              type: "received",
+            },
+            {
+              text: "धन के स्वामी कुबेर आपकी झोली को धन-धान्य और समृद्धि से भर दें। <br><br> Dhan ke Swami Kuber aapki jholi ko dhan-dhanya aur samriddhi se bhar dein.",
+              time: "",
+              type: "received",
+            },
+          ],
+        },
+        {
+          id: "Vaishno Mata",
+          name: "Vaishno Mata",
+          avatar: "vishnumata.jpeg",
+          color: "#ad1457",
+          status: "Online",
+          lastMessage: "जय माता दी! 🌸",
+          lastTime: "Active",
+          messages: [
+            {
+              text: "जय माता दी! 🌸🙏 <br><br> Jai Mata Di! 🌸🙏",
+              time: "",
+              type: "received",
+            },
+            {
+              text: "माँ वैष्णो आपके जीवन में शक्ति, भक्ति और समृद्धि का आशीर्वाद दें। <br><br> Maa Vaishno aapke jeevan mein shakti, bhakti aur samriddhi ka ashirwaad dein.",
+              time: "",
+              type: "received",
+            },
+          ],
+        },
+        {
+          id: "Hanuman Ji",
+          name: "Hanuman Ji",
+          avatar: "hanuman.png",
+          color: "#e65100",
+          status: "Online",
+          lastMessage: "ॐ हनुमते नमः! 🚩",
+          lastTime: "Active",
+          messages: [
+            {
+              text: "ॐ हनुमते नमः! 🚩 जय बजरंगबली! <br><br> Om Hanumate Namah! 🚩 Jai Bajrangbali!",
+              time: "",
+              type: "received",
+            },
+            {
+              text: "संकट मोचन हनुमान आपकी सारी बाधाएँ दूर करेंगे। <br><br> Sankat Mochan Hanuman aapki saari badhayen door karenge.",
+              time: "",
+              type: "received",
+            },
+          ],
+        },
+        {
+          id: "Neem Karoli Baba",
+          name: "Neem Karoli Baba",
+          avatar: "neekarolibaba.png",
+          color: "#795548",
+          status: "Online",
+          lastMessage: "सबके भीतर राम हैं",
+          lastTime: "Active",
+          messages: [
+            {
+              text: "सबके भीतर राम हैं, प्रेम ही परम धर्म है ❤️🙏<br><br> Sabke bheetar Ram hain, prem hi param dharm hai. ❤️🙏",
+              time: "",
+              type: "received",
+            },
+            {
+              text: "भक्त अपने मन की बात कह सकते हैं। <br><br> Bhakt apne man ki baat keh sakte ho.",
+              time: "",
+              type: "received",
+            },
+          ],
+        },
+        {
+          id: "Khatu Shyam Ji",
+          name: "Khatu Shyam Ji",
+          avatar: "khatushyam.jpeg",
+          color: "#8e24aa",
+          status: "Online",
+          lastMessage: "श्याम तेरी जोत निराली ✨",
+          lastTime: "Active",
+          messages: [
+            {
+              text: "हारे का सहारा श्याम हमारा 🙏💙 <br><br> Haare ka Sahara Shyam Hamara 🙏💙",
+              time: "",
+              type: "received",
+            },
+            {
+              text: "जो भी सच्चे मन से श्याम को पुकारता है, उनकी मनोकामना पूर्ण होती है। <br><br> Jo bhi sache man se Shyam ko pukarta hai, unki manokamna poorn hoti hai.",
+              time: "",
+              type: "received",
+            },
+          ],
+        },
+      ];
+
+      /* --------------------- DOM refs --------------------- */
+      const godsList = document.querySelector(".gods-list");
+      const chatContainer = document.querySelector(".chat-container");
+      const sidebar = document.querySelector(".sidebar");
+      const chatHeader = document.querySelector(".chat-header");
+      const chatMessages = document.querySelector(".chat-messages");
+      const chatHeaderName = document.querySelector(".chat-header-name");
+      const chatStatus = document.querySelector(".chat-status");
+      const chatHeaderAvatar = document.querySelector(".chat-header-avatar");
+      const messageInput = document.querySelector(".message-input");
+      const sendButton = document.querySelector(".send-button");
+      const backButton = document.querySelector(".back-button");
+      const messageSound = document.getElementById("messageSound");
+      const visitorCountElement = document.getElementById("visitorCount");
+
+      /* ===[ START: NEW SERVER-SIDE TRACKING ]=== */
+      function logEvent(eventType, godId = null) {
+        const data = { event: eventType, godId: godId };
+        fetch("log_stats.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }).catch((error) => console.error("Error logging event:", error));
+      }
+      function trackVisitor() {
+        if (!sessionStorage.getItem("visitor_logged")) {
+          logEvent("visitor");
+          sessionStorage.setItem("visitor_logged", "true");
+        }
+      }
+      function trackGodClick(godId) {
+        logEvent("click", godId);
+      }
+      /* ===[ END: NEW SERVER-SIDE TRACKING ]=== */
+
+      /* --------------------- State & Utils --------------------- */
+      let activeGod = null;
+      let isInChatView = false;
+      function getCurrentTime() {
+        const now = new Date();
+        let h = now.getHours();
+        const m = String(now.getMinutes()).padStart(2, "0");
+        const ampm = h >= 12 ? "PM" : "AM";
+        h = h % 12 || 12;
+        return `${h}:${m} ${ampm}`;
+      }
+      function adjustColor(color, percent) {
+        const num = parseInt(color.replace("#", ""), 16),
+          amt = Math.round(2.55 * percent),
+          R = (num >> 16) + amt,
+          G = ((num >> 8) & 0x00ff) + amt,
+          B = (num & 0x0000ff) + amt;
+        return (
+          "#" +
+          (
+            0x1000000 +
+            (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+            (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+            (B < 255 ? (B < 1 ? 0 : B) : 255)
+          )
+            .toString(16)
+            .slice(1)
+        );
+      }
+
+      /* --------------------- Render list --------------------- */
+      function renderGodsList() {
+        godsList.innerHTML = "";
+        gods.forEach((god) => {
+          const godItem = document.createElement("div");
+          godItem.className = "god-item";
+          godItem.dataset.id = god.id;
+          godItem.innerHTML = `<div class="god-avatar" style="background: linear-gradient(45deg, ${
+            god.color
+          }, ${adjustColor(god.color, 30)})"><img src="${god.avatar}" alt="${
+            god.name
+          }"></div><div class="god-info"><div class="god-name">${
+            god.name
+          }</div><div class="last-message">${
+            god.lastMessage
+          }</div></div><div class="god-meta"><div class="last-time">${
+            god.lastTime
+          }</div></div>`;
+          godItem.addEventListener("click", () => {
+            openChat(god);
+            trackGodClick(god.id); // Track click on the server
+          });
+          godsList.appendChild(godItem);
+        });
+      }
+
+      /* --------------------- Typewriter & Chat UI Functions --------------------- */
+      // (इन फंक्शन्स में कोई बदलाव नहीं)
+      function typeMessage(element, text, speed = 30) {
+        return new Promise((resolve) => {
+          let i = 0;
+          const timer = setInterval(() => {
+            if (i < text.length) {
+              if (text.substr(i, 4) === "<br>") {
+                element.innerHTML += "<br>";
+                i += 4;
+              } else {
+                element.innerHTML += text.charAt(i);
+                i++;
+              }
+            } else {
+              clearInterval(timer);
+              resolve();
+            }
+          }, speed);
+        });
+      }
+      async function openChat(god) {
+        activeGod = god;
+        chatHeaderName.textContent = god.name;
+        chatStatus.textContent = god.status;
+        chatHeaderAvatar.innerHTML = `<img src="${god.avatar}" alt="${god.name}">`;
+        backButton.style.display = "flex";
+        if (window.innerWidth <= 768) {
+          sidebar.classList.add("hidden");
+          chatContainer.classList.add("active");
+        }
+        document.querySelectorAll(".god-item").forEach((item) => {
+          item.classList.remove("active");
+          if (item.dataset.id === god.id) item.classList.add("active");
+        });
+        updateNavigationState("chat");
+        await renderMessages();
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      function closeChat() {
+        activeGod = null;
+        if (window.innerWidth <= 768) {
+          sidebar.classList.remove("hidden");
+          chatContainer.classList.remove("active");
+        }
+        backButton.style.display = "none";
+        document
+          .querySelectorAll(".god-item")
+          .forEach((item) => item.classList.remove("active"));
+        updateNavigationState("list");
+      }
+      function updateNavigationState(view) {
+        isInChatView = view === "chat";
+        if (view === "chat") history.pushState({ view: "chat" }, "", "#chat");
+        else
+          history.replaceState({ view: "list" }, "", window.location.pathname);
+      }
+      window.addEventListener("popstate", function () {
+        if (isInChatView) {
+          closeChat();
+          history.pushState(null, "", window.location.pathname);
+        }
+      });
+      async function renderMessages() {
+        chatMessages.innerHTML = "";
+        if (!activeGod) {
+          chatMessages.innerHTML = `<div class="empty-chat"><i class="fas fa-comments"></i><p>Select a deity from the list to begin your spiritual conversation.</p><p style="font-weight:bold;color:red;font-size:24px">"This application does not store or log any user data. All interactions are session-based and ephemeral, ensuring complete anonymity and privacy. You can communicate freely and share your thoughts without any data retention."</p></div>`;
+          return;
+        }
+        const messagesContainer = document.createElement("div");
+        messagesContainer.style.display = "flex";
+        messagesContainer.style.flexDirection = "column";
+        messagesContainer.style.gap = "15px";
+        chatMessages.appendChild(messagesContainer);
+        let privacyNotice = document.createElement("div");
+        privacyNotice.className = "privacy-notice";
+        privacyNotice.innerHTML = `<i class="fas fa-lock"></i> This message is not stored anywhere. Your conversation is completely private and ephemeral.`;
+        chatMessages.appendChild(privacyNotice);
+        for (const msg of activeGod.messages) {
+          const el = document.createElement("div");
+          el.className = `message ${msg.type}`;
+          const currentTime = getCurrentTime();
+          el.innerHTML = `<div class="message-content"></div><div class="message-meta"><div class="message-time">${currentTime}<span class="message-status">${
+            msg.type === "sent" ? "✓✓" : ""
+          }</span></div></div>`;
+          chatMessages.insertBefore(el, privacyNotice);
+          const contentElement = el.querySelector(".message-content");
+          await typeMessage(contentElement, msg.text);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+          await new Promise((r) => setTimeout(r, 500));
+        }
+      }
+      function createMessageElement(text, time, type) {
+        const message = document.createElement("div");
+        message.className = `message ${type}`;
+        const currentTime = time || getCurrentTime();
+        message.innerHTML = `<div class="message-content"></div><div class="message-meta"><div class="message-time">${currentTime}<span class="message-status">${
+          type === "sent" ? "✓✓" : ""
+        }</span></div></div>`;
+        message.querySelector(".message-content").innerHTML = text;
+        return message;
+      }
+      function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      function makeSmokeBurst(hostEl, puffs = 7) {
+        hostEl.style.position = hostEl.style.position || "relative";
+        for (let i = 0; i < puffs; i++) {
+          const s = document.createElement("span");
+          s.className = "smoke";
+          const drift = (Math.random() * 60 - 30).toFixed(0) + "px";
+          s.style.setProperty("--sx", drift);
+          const dur = Math.round(1600 + Math.random() * 600);
+          s.style.setProperty("--dur", dur + "ms");
+          const size = 5 + Math.random() * 7;
+          s.style.width = size + "px";
+          s.style.height = size + "px";
+          s.style.animationDelay = i * 90 + "ms";
+          hostEl.appendChild(s);
+          s.addEventListener("animationend", () => s.remove());
+        }
+      }
+      function getTargetAvatarRect() {
+        if (!sidebar.classList.contains("hidden") && activeGod) {
+          const sidebarAvatar = document.querySelector(
+            `.god-item[data-id="${activeGod.id}"] .god-avatar img, .god-item[data-id="${activeGod.id}"] .god-avatar`
+          );
+          if (sidebarAvatar) return sidebarAvatar.getBoundingClientRect();
+        }
+        const headerImg = chatHeaderAvatar.querySelector("img");
+        return headerImg ? headerImg.getBoundingClientRect() : null;
+      }
+      function flyMessageToAvatar(msgEl) {
+        const avatarRect = getTargetAvatarRect();
+        if (!avatarRect) return;
+        const msgRect = msgEl.getBoundingClientRect();
+        const clone = msgEl.cloneNode(true);
+        clone.classList.add("fly-clone");
+        clone.style.left = msgRect.left + "px";
+        clone.style.top = msgRect.top + "px";
+        clone.style.width = msgRect.width + "px";
+        document.body.appendChild(clone);
+        const fromX = msgRect.left + msgRect.width / 2,
+          fromY = msgRect.top + msgRect.height / 2,
+          toX = avatarRect.left + avatarRect.width / 2,
+          toY = avatarRect.top + avatarRect.height / 2,
+          dx = toX - fromX,
+          dy = toY - fromY;
+        const curveX = dx * (0.04 + Math.random() * 0.06),
+          curveY = dy * (0.04 + Math.random() * 0.06);
+        requestAnimationFrame(() => {
+          clone.style.transform = `translate(${dx + curveX}px, ${
+            dy + curveY
+          }px) scale(0.3)`;
+          clone.style.opacity = "0";
+        });
+        clone.addEventListener("transitionend", () => clone.remove());
+      }
+      function animateMessageDisappear(messageElement) {
+        makeSmokeBurst(messageElement, 7);
+        flyMessageToAvatar(messageElement);
+        messageElement.classList.add("disappearing");
+        setTimeout(() => {
+          messageElement.remove();
+          scrollToBottom();
+        }, 1000);
+      }
+      function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text || !activeGod) return;
+        messageSound.currentTime = 0;
+        messageSound.play().catch(() => {});
+        const messageElement = createMessageElement(text, null, "sent");
+        chatMessages.insertBefore(
+          messageElement,
+          document.querySelector(".privacy-notice")
+        );
+        messageInput.value = "";
+        scrollToBottom();
+        setTimeout(() => animateMessageDisappear(messageElement), 3000);
+      }
+
+      /* --------------------- Events --------------------- */
+      sendButton.addEventListener("click", sendMessage);
+      messageInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") sendMessage();
+      });
+      backButton.addEventListener("click", closeChat);
+      const shareBtn = document.getElementById("shareBtn");
+      shareBtn.addEventListener("click", async () => {
+        const shareData = {
+          title: "शेयर करें",
+          text: "अपने परिवार और दोस्तों के साथ इस लिंक को शेयर करें।",
+          url: "http://blessmenow.online/",
+        };
+        if (navigator.share) {
+          try {
+            await navigator.share(shareData);
+            alert("लिंक सफलतापूर्वक शेयर हो गया ✅");
+          } catch (err) {
+            console.log("शेयर रद्द:", err);
+          }
+        } else {
+          alert(
+            "आपका ब्राउज़र शेयर सुविधा को सपोर्ट नहीं करता।\nलिंक कॉपी करें: " +
+              shareData.url
+          );
+        }
+      });
+
+      /* --------------------- Init --------------------- */
+      renderGodsList();
+      trackVisitor(); // Track new visitor on page load
+      backButton.style.display = "none";
+      updateNavigationState("list");
+    </script>
+  </body>
+</html>
