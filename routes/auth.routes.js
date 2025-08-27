@@ -9,6 +9,7 @@ const {
   login,
   refresh,
   logout,
+  getAllSellers
 } = require("../controllers/auth.controller");
 const { authenticate } = require("../middlewares/auth.middleware");
 const { authorizeRoles } = require("../middlewares/role.middleware");
@@ -20,6 +21,9 @@ router.post("/verify-otp", verifyOtp);
 router.post("/resend-otp", resendOtp);
 router.post("/login", login);
 router.post("/refresh", refresh);
+
+
+
 
 // SUPERADMIN ONLY
 router.post(
@@ -39,5 +43,12 @@ router.post(
 
 // AUTHENTICATED
 router.post("/logout", authenticate, logout);
+
+
+
+
+// seller routes
+
+router.get("/sellerlist",authenticate, authorizeRoles("admin", "superadmin"), getAllSellers);
 
 module.exports = router;

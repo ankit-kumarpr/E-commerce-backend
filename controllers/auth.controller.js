@@ -1,5 +1,6 @@
 const User = require("../models/user.model");
 const Counter = require("../models/counter.model");
+const Kyc = require("../models/Kyc");
 const { validatePassword, allowedSelfRoles } = require("../utils/validators");
 const { sendOtpMail, sendWelcomeMail } = require("../services/mail.service");
 const {
@@ -187,7 +188,7 @@ const adminCreateSalesPerson = async (req, res) => {
 
     res
       .status(201)
-      .json({ message: "Sales person created, OTP sent", customId,user });
+      .json({ message: "Sales person created, OTP sent", customId, user });
   } catch (err) {
     handleDuplicateKey(err, res);
   }
@@ -332,6 +333,70 @@ const logout = async (req, res) => {
   }
 };
 
+
+
+
+// get all seller list
+
+const getAllSellers = async (req, res) => {
+  try {
+    const sellers = await Kyc.find()
+      .populate('user', 'firstname lastname email phone role') // show basic user info
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, sellers });
+  } catch (error) {
+    console.error('Get All Sellers Error:', error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+
+// delete seller
+
+const DeleteSeller=async(req,res)=>{
+  const {userId}=req.params;
+  try{
+
+    if(!userId){
+      return res.status(400).json({
+        error:true,
+        message:"Something went wrong || Id is required"
+      })
+    }
+
+    const deldata=await User.findByIdAndUpdate(userId,{is_deletd:1},{new:true});
+
+    if(!deldata){
+      return res.status(404).json({
+        error:true,
+        message:"Seller Not deleted"
+      })
+    }
+
+    return res.status(200).json({
+      error:false,
+      message:"Seller Deleted Successfully"
+    })
+
+
+  }
+  catch(error){
+    return res.status(500).json({
+      error:true,
+      message:"Internal server error"
+    })
+  }
+}
+
+
+
+
+
+
+
+
+
 module.exports = {
   registerSuperAdmin,
   registerSelf,
@@ -342,4 +407,5 @@ module.exports = {
   login,
   refresh,
   logout,
+  getAllSellers
 };
